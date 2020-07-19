@@ -1,0 +1,10 @@
+s bomb
+s explosion
+s font
+s guy
+t8 bg.bmp
+l8 map.tmx
+t4 hills.bmp
+m4 hill_map.tmx
+t4 cloud.bmp
+m4 cloudmap.tmx
