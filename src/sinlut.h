@@ -6,7 +6,6 @@
 // 10-bit sinlut.
 extern const s32 sinlut[0x0800] ALIGN(2);
 #define SIN_SHF (16)
-// 0x8000
 
 INLINE s32 lu_sin(u32 a)
 { return sinlut[(a>>5)&0x7FF]; }

@@ -27,12 +27,22 @@ typedef signed char s8;
 typedef signed short s16;
 typedef signed int s32;
 
+typedef s32 f32;
+typedef s16 f16;
+
 #define KBSIZE(n) (0x400*(n))
 #define MBSIZE(n) (KBSIZE(0x400)*n)
 
 #define INLINE static inline
 #define PACKED   __attribute__((packed))
 #define ALIGN(n) __attribute__((aligned(n)))
+
+/*---- fixed point --------------------------------------------------*/
+#define FIX_SHF (16)
+INLINE f32 mulf32(f32 a,f32 b)
+{ return (a*b)>>FIX_SHF; }
+INLINE s32 f32tos32(f32 a)
+{ return a>>FIX_SHF; }
 
 /*---- color defines ------------------------------------------------*/
 typedef u16 CLR16; // 16-bit color in format 1BBBBBGGGGGRRRRR
@@ -139,7 +149,7 @@ INLINE void sh2_dma_blast(u32 ch, const void *src,const void *dst,u32 cnt,u32 mo
   // "why are you using assembly?" it's easier to debug in an emu, trust me.
   // alternatively, you may comment this part out and just use
   // the C section (ha) below.
-  asm(
+  /* asm(
     // move src,dst,cnt
     "MOV.L %[src],@(0,%[ch])\t\n"
     "MOV.L %[dst],@(4,%[ch])\t\n"
@@ -155,12 +165,12 @@ INLINE void sh2_dma_blast(u32 ch, const void *src,const void *dst,u32 cnt,u32 mo
     [mode]"r"(mode),[cr]"r"(((u32)&DMA_REG_CR[ch]))
   ); // */
   
-  /* DMA_REG[ch].src = (u32)src;
+  DMA_REG[ch].src = (u32)src;
   DMA_REG[ch].dst = (u32)dst;
   DMA_REG[ch].cnt = cnt;
   DMA_REG_CR[ch] = 0; // external request
   DMA_REG[ch].ctrl = (DMA_REG[ch].ctrl&0) | mode; // */
-	while(sh2_dma_active(ch));
+	//while(sh2_dma_active(ch));
 }
 
 INLINE void sh2_dma_cpy(u32 ch,const void *src,const void *dst,u32 cnt)
@@ -268,7 +278,7 @@ INLINE void vdp1_cmd_cpy(const void *src,u32 index)
 typedef u8 VDP2_BANK[0x20000];
 #define VDP2_VRAM ((volatile VDP2_BANK*)VDP2_MEM);
 #define VDP2_CRAM ((volatile u8*)(VDP2_MEM + 0x100000))
-#define VDP2_REG_IO   ((volatile u8*)(VDP2_MEM + 0x180000))
+#define VDP2_REG_IO   ((volatile u16*)(VDP2_MEM + 0x180000))
 
 #define VDP2_SPRPRIORITY ((volatile u16*)(VDP2_REG_IO + 0x0000F0))
 #define VDP_PRIORITY(a,b) ( ((a)&7) | (((b)&7)<<8) )
