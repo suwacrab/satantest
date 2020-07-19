@@ -94,41 +94,44 @@ int main(void)
 			SPR_2SysClip(0, &(XyInt){319,223});
 			XyInt usrclip[2] = {{0,0},{100,200}};
 			SPR_2UserClip(0,usrclip);
+			/* text drawin */
+			u32 fontaddr = IMG_CHAR_LUT[IMG_ARCFONT]<<3;
+			const char txt[] = "THIS IS A SAMPLE FONT!\nIT TOOK WAY TOO LONG FOR ME TO\nFIGURE OUT HOW TO DISPLAY\nTHIS TEXT.\n\n\nalso, i can load images\nfrom the CD now.";
+			VDP1_CMD base_cmd = {
+				.cmdpmod = CMDPMOD_CLR(VDP1_CLRMODE_PAL256),
+				.cmdsize = VDP1_CMDSIZE(8,8)
+			};
+			u32 chr_len = (u32)strlen(txt);
+			u32 x,y;
+			x = y = 0;
+			for(u32 i=0; i<chr_len; i++)
+			{
+				char c = txt[i];
+				if(c == '\n')
+				{ x=0; y++; }
+				else {
+					VDP1_CMD cmd = base_cmd;
+					cmd.cmdxa = x*8;
+					cmd.cmdya = y*8;
+					cmd.cmdsrca = (fontaddr + (c<<6))>>3;
+					SPR_2Cmd(0,&cmd);
+					x++;
+				}
+			}
 			/* line drawin */
 			XyInt pos[4];
 			u32 len = 64;
-			u32 ang_offset = suwako->time<<0;
+			u32 ang_offset = suwako->time<<4;
 			for(u32 i=0;i<4;i++) {
 				u32 ang = ang_offset + (0x4000*i);
-				pos[i].x = (u32)(len*lu_cos(ang))>>12;
-				pos[i].y = (u32)(len*lu_sin(ang))>>12;
+				pos[i].x = (u32)(len*lu_cos(ang))>>16;
+				pos[i].y = (u32)(len*lu_sin(ang))>>16;
 				pos[i].x+=(WIDTH>>1);pos[i].y+=(HEIGHT>>1);
 			}
 			
 			SPR_2DistSpr(0,0,CMDPMOD_MESH*1,RGB16(31,0,0),IMG_TESTTEX0,
 				pos,NO_GOUR
 			);
-			/* text drawin */
-			u32 fontaddr = IMG_CHAR_LUT[IMG_ARCFONT]<<3;
-			const char txt[] = "THIS IS A SAMPLE FONT!\nIT TOOK WAY TOO LONG FOR ME TO\nFIGURE OUT HOW TO DISPLAY\nTHIS TEXT.";
-			u32 x,y;
-			x = y = 0;
-			for(u32 i=0; i<strlen(txt); i++)
-			{
-				char c = txt[i];
-				if(c == '\n')
-				{ x=0; y++; }
-				else {
-					VDP1_CMD cmd = {
-						.cmdpmod = CMDPMOD_CLR(VDP1_CLRMODE_PAL256),
-						.cmdsrca = (fontaddr + (c<<6))>>3,
-						.cmdxa = x*8, .cmdya = y*8,
-						.cmdsize = VDP1_CMDSIZE(8,8)
-					};
-					SPR_2Cmd(0,&cmd);
-					x++;
-				}
-			}
 		}
 		SPR_2CloseCommand();
 		

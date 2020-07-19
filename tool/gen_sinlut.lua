@@ -15,14 +15,14 @@ end
 
 --|====<  sin funcs   >====|
 local function gen_sinlut(len,shf)
-  local head = ("const signed short sinlut[0x%04X] =\n{"):format(len)
+  local head = ("const signed int sinlut[0x%04X] =\n{"):format(len)
   local str = { head }
   for i = 0,len-1 do
     local a = sin(i*pi*2/len)
-    local n = math.floor(a * (1<<shf))&0xFFFF
+    local n = math.floor(a * (1<<shf))&0xFFFFFFFF
     if(i&7==0) then
       str[#str+1] = "\n\t" end
-    str[#str+1] = ("0x%04X,"):format(n)
+    str[#str+1] = ("0x%08X,"):format(n)
   end
   str[#str+1] = "\n};\n"
   
@@ -30,7 +30,7 @@ local function gen_sinlut(len,shf)
 end
 
 local function inp()
-  local len,shf = 0x800,12
+  local len,shf = 0x800,16
   local sinlut = gen_sinlut(len,shf) do
     local f = io.open("src/sinlut.c","wb")
     f:write(sinlut); f:close()

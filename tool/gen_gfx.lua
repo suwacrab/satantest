@@ -17,7 +17,15 @@ local function clrtorgb16(clr)
   local r,g,b = clr[1]>>3,clr[2]>>3,clr[3]>>3
   return r | (g<<5) | (b<<10)
 end
-
+--|==== vars
+local dat_dir = "nitrofiles/dat"
+local grit_dir = "C:/KM-20/tool/devkitPro/tools/bin/grit.exe"
+--|==== functions
+local function grit_cmd(args)
+	local cmd = ("%s %s"):format(grit_dir,args)
+	print(cmd)
+	os.execute(cmd)
+end
 --|====<   pal funcs >====|
 local function paltobin(pal)
   local str = {pal.name or "EMPTYPAL",u16tostr(pal.len)}
@@ -112,10 +120,10 @@ do
   --> dummy
   --os.execute("grit gfxdat/dummy.bmp -gB4 -p! -fh -ftc -o data_img/img_dummy.c")
   --> piss
-  os.execute("grit imgdat/testtex0.bmp -gu8 -gT! -gb -gB16 -p! -fh! -ftb -o cd/img/TESTTEX0")
+  grit_cmd("imgdat/testtex0.bmp -gu8 -gT! -gb -gB16 -p! -fh! -ftb -o cd/img/TESTTEX0")
 	img_fix("cd/img/TESTTEX0.img.bin","cd/TESTTEX0.BIN",32,32, 5);
   --> arcfont
-  os.execute("grit imgdat/arcfont.bmp -Mw 16 -Mh 8 -gB8 -p! -fh! -ftb -o cd/img/ARCFONT")
+  grit_cmd("imgdat/arcfont.bmp -Mw 16 -Mh 8 -gB8 -p! -fh! -ftb -o cd/img/ARCFONT")
   img_fix("cd/img/ARCFONT.img.bin","cd/ARCFONT.BIN",128,64, 4)
   -- pal conversion
   --[[
