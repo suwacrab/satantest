@@ -179,9 +179,9 @@ INLINE void sh2_dma_blast(u32 ch, const void *src,const void *dst,u32 cnt,u32 mo
 
 INLINE void sh2_dma_cpy(u32 ch,const void *src,const void *dst,u32 cnt)
 { 
-	u32 ctrl = DMA_AR|DMA_PR|DMA_NMIF|DMA_DME;
-	ctrl |= DMA_SRC_INC|DMA_DST_INC|DMA_ON|DMA_SIZE(1);
-	sh2_dma_blast(ch,src,dst,cnt>>1,ctrl);
+	u32 ctrl = DMA_AR;
+	ctrl |= DMA_SRC_INC|DMA_DST_INC|DMA_ON|DMA_SIZE(0);
+	sh2_dma_blast(ch,src,dst,cnt,ctrl);
 }
 
 /* DMA example: copy $10 bytes from WRAM_LO[$000000] to WRAM_LO[$000100]

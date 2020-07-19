@@ -75,38 +75,56 @@ end
 
 --|====< img funcs > ====|
 local function img_fix(fname,destname,w,h,clrmode)
-  local img = io.open(fname,"rb")
-  local imgstr = img:read("*all")
-  img:close()
-	-- fix image
+	-- get image
+  local f = io.open(fname..".img.bin","rb")
+  local imgstr = f:read("*all")
+  f:close()
+	-- get palette
+	local palstr = ""
+	if(clrmode ~= 5) then
+		f = io.open(fname..".pal.bin","rb")
+		palstr = f:read("*all")
+		f:close()
+	end
+	-- grit's images are made for the GBA, not the saturn, so they must be fixed
 	local new_img = {}
+	-- > 4-bit color. Data kept the same.
 	if clrmode == 0 then
 		for i = 1,#imgstr do
 			new_img[#new_img+1] = imgstr:sub(i,i)
 		end
+	-- > 8-bit color. Data kept the same.
 	elseif clrmode > 0 and clrmode < 5 then
 		for i = 1,#imgstr do
 			new_img[#new_img+1] = imgstr:sub(i,i)
 		end
+	-- > 16-bit color. Bytes are swapped, since saturn is big-endian.
 	elseif clrmode == 5 then
 		for i = 1,#imgstr,2 do
-			local ind = i-1
 			local b0,b1 = imgstr:byte(i,i+1)
 			new_img[#new_img+1] = u8tostr(b1)
 			new_img[#new_img+1] = u8tostr(b0)
 		end
 	end
 	new_img = table.concat(new_img)
+	-- now get the palette, converted to 16-bit color
+	local palette = {}
+	for i = 1,#palstr,2 do
+		local b0,b1 = palstr:byte(i,i+1)
+		palette[#palette+1] = u8tostr(b1)
+		palette[#palette+1] = u8tostr(b0)
+	end
 	-- make header
   local head = {
     u16tostr(w),u16tostr(h),
-    u16tostr(clrmode),
+    u16tostr(clrmode)
   }
-  imgstr = table.concat(head)..new_img
+  imgstr = table.concat(head)..new_img..table.concat(palette)
   
-  img = io.open(destname,"wb")
+  local img = io.open(destname,"wb")
   img:write(imgstr); img:close()
-	os.execute(("rm %s"):format(fname))
+	os.execute(("rm %s.img.bin"):format(fname))
+	if(clrmode~=5) then os.execute(("rm %s.pal.bin"):format(fname)) end
 end
 
 -- building
@@ -115,19 +133,22 @@ local pal_trgs = {
   {"palettes/erogecop.pal","data/pal_erogeco","erogecop"};
 }
 
-do
+local function gen_gfx()
   -- gfx conversion
   --> dummy
   --os.execute("grit gfxdat/dummy.bmp -gB4 -p! -fh -ftc -o data_img/img_dummy.c")
   --> piss
   grit_cmd("imgdat/testtex0.bmp -gu8 -gT! -gb -gB16 -p! -fh! -ftb -o cd/img/TESTTEX0")
-	img_fix("cd/img/TESTTEX0.img.bin","cd/TESTTEX0.BIN",32,32, 5);
+	img_fix("cd/img/TESTTEX0","cd/TESTTEX0.BIN",32,32, 5);
   --> arcfont
-  grit_cmd("imgdat/arcfont.bmp -Mw 16 -Mh 8 -gB8 -p! -fh! -ftb -o cd/img/ARCFONT")
-  img_fix("cd/img/ARCFONT.img.bin","cd/ARCFONT.BIN",128,64, 4)
+  grit_cmd("imgdat/arcfont.bmp -Mw 16 -Mh 16 -gB8 -p -fh! -ftb -o cd/img/ARCFONT")
+  img_fix("cd/img/ARCFONT","cd/ARCFONT.BIN",128,64, 4)
   -- pal conversion
   --[[
   for _,trg in pairs(pal_trgs) do
     conv_pal(table.unpack(trg))
   end]]
 end
+
+gen_gfx()
+
