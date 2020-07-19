@@ -1,0 +1,139 @@
+<html>
+
+<head>
+	<!-- character bs -->
+	<meta charset="Shift_JIS">
+	<!-- style bs -->
+	<link rel="stylesheet" type="text/css" href="/~suwacrab/css/base.css">
+	<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+	<!-- VDP2 -->
+	<h1>VDP2 NOTES</h1>
+	<!-- memory map -->
+	<hr/>
+	<div>
+		<h2>＊MEMORY MAP</h2>
+		<p>VDP2 VRAM begins at 05E00000H.</p>
+		<p>Addresses are relative to the beginning of VDP2 VRAM.</p>
+		<table border="1">
+			<tbody>
+				<tr>
+					<th>VDP2 Description</th>
+					<th>Address</th>
+					<th>Size</th>
+				</tr>
+				<tr>
+					<td>VDP2 VRAM Bank A0</td>
+					<td>00000000H</td>
+					<td>128 KB</td>
+				</tr>
+				<tr>
+					<td>VDP2 VRAM Bank A1</td>
+					<td>00020000H</td>
+					<td>128 KB</td>
+				</tr>
+				<tr>
+					<td>VDP2 VRAM Bank B0</td>
+					<td>00040000H</td>
+					<td>128 KB</td>
+				</tr>
+				<tr>
+					<td>VDP2 VRAM Bank B1</td>
+					<td>00060000H</td>
+					<td>128 KB</td>
+				</tr>
+				<tr>
+					<td>VDP2 Color RAM</td>
+					<td>00100000H</td>
+					<td>4 KB</td>
+				</tr>
+				<tr>
+					<td>VDP2 I/O register address</td>
+					<td>00180000H</td>
+					<td></td>
+				</tr>
+			</tbody>
+		</table>
+		<p>the four VRAM banks hold data for your character data/tile entries.</p>
+		<p>Color RAM (CRAM) holds the VDP2's palette, which can be used for both VDP1 and VDP2 screens.</p>
+		<p>the IO registers configure the VDP2, they're used for changing the screen size, priority, etc. </p>
+	</div>
+	<!-- IO registers -->
+	<hr/>
+	<div>
+		<h2>＊I/O REGISTERS</h2>
+		<p>(R) means a register is read-only, (R/A) means reading is allowed, (W) is write-only, and (R/W) means it can be read and written to.</p>
+		<p>All VDP2 registers are halfwords (16 bits).</p>
+		<!-- TV mode -->
+		<h3>00180000 : (R/A) : TV Mode</h2>
+		<table border="1">
+			<tbody>
+				<tr>
+					<td>Bit(s)</td>
+					<td>Name</td>
+					<td>Description</td>
+				</tr>
+				<tr>
+					<td>15</td>
+					<td>DISP : TV screen display bit</td>
+					<td>Controls if picture's displayed on TV screen. (0=no display,1=display)</td>
+				</tr>
+				<tr>
+					<td>8</td>
+					<td>BDCLMD : Border color mode bit</td>
+					<td>Controls the border area's colors. (0=display black,1=display back screen)</td>
+				</tr>
+				<tr>
+					<td>7~6</td>
+					<td>LSMD1,LSMD0 : Interlace mode</td>
+					<td>Designates the interlace mode. (0=non-interlace,2=single-density,3=double-density)</td>
+				</tr>
+				<tr>
+					<td>5~4</td>
+					<td>VRESO1,VRESO0 : Vertical resolution bit</td>
+					<td>Designates vertical resolution of picture displayed on TV screen. (0=224,1=240,2=256(PAL ONLY))</td>
+				</tr>
+				<tr>
+					<td>2~0</td>
+					<td>HRESO2~HRESO0 : Horizontal resolution bit</td>
+					<td>Designates horizontal resolution of picture displayed on TV screen. (0=320,1=352,2=640,3=704,4=320(31kHz),5=352(Hi-Vision),6=640(31kHz),7=704(Hi-Vision))</td>
+				</tr>
+			</tbody>
+		</table>
+		<!-- 00180002H : R/A : External Signal Enable Register-->
+		<h3>00180002H : (R/A) : External Signal Enable Register</h3>
+		<table border="1">
+			<tbody>
+				<tr>
+					<td>Bit(s)</td>
+					<td>Name</td>
+					<td>Description</td>
+				</tr>
+				<tr>
+					<td>9</td>
+					<td>EXLTEN : External latch enable bit</td>
+					<td>Selects condition for latching HV counter value to the HV counter register. (0=latch on reading external signal enable register,1=latch through external signal</td>
+				</tr>
+				<tr>
+					<td>8</td>
+					<td>EXSYEN : EXSYNC enable bit</td>
+					<td>Controls input to internal synchronous circuit of external sync signal. (0=does not input external sync signal,1=inputs external sync signal,syncs TV display with external))</td>
+				</tr>
+				<tr>
+					<td>1</td>
+					<td>DASEL : Display Area select bit</td>
+					<td>designates image display area, only valid when EXBGEN is 1. (0=display only in set display area,1=display in standard display area</td>
+				</tr>
+				<tr>
+					<td>0</td>
+					<td>EXBGEN : EXBG enable bit</td>
+					<td>Controls input to external screen data.</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</body>
+
+</html>
+
