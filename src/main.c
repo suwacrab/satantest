@@ -97,9 +97,12 @@ int main(void)
 			/* text drawin */
 			u32 fontaddr = IMG_CHAR_LUT[IMG_ARCFONT]<<3;
 			const char txtrom[] ALIGN(2) = "THIS IS A SAMPLE FONT!\nIT TOOK WAY TOO LONG FOR ME TO\nFIGURE OUT HOW TO DISPLAY\nTHIS TEXT.\n\n\nalso, i can load images\nfrom the CD now.";
-			char txtbuf[0x20] ALIGN(2); txtbuf[0] = 1;
+			char txtbuf[0x0100] ALIGN(2);
+			sh2_dma_blast(
+				0,txtrom,txtbuf,strlen(txtrom),
+				DMA_SRC_INC|DMA_DST_INC|DMA_AR|DMA_ON
+			);
 			char *txt = txtbuf;
-			sh2_dma_cpy(0,txtrom,txtbuf,strlen(txtrom));
 			VDP1_CMD base_cmd = {
 				.cmdpmod = CMDPMOD_CLR(VDP1_CLRMODE_PAL256),
 				.cmdsize = VDP1_CMDSIZE(8,8)

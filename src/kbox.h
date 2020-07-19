@@ -165,16 +165,24 @@ INLINE void sh2_dma_blast(u32 ch, const void *src,const void *dst,u32 cnt,u32 mo
     [mode]"r"(mode),[cr]"r"(((u32)&DMA_REG_CR[ch]))
   ); // */
   
+	*DMA_REG_OR = DMA_DME | DMA_PR;
   DMA_REG[ch].src = (u32)src;
   DMA_REG[ch].dst = (u32)dst;
   DMA_REG[ch].cnt = cnt;
-  DMA_REG_CR[ch] = 0; // external request
+	// write to ctrl
+	u32 b = DMA_REG_CR[ch];
+  b |= 1; // external request
+	DMA_REG_CR[ch] = b;
   DMA_REG[ch].ctrl = (DMA_REG[ch].ctrl&0) | mode; // */
-	//while(sh2_dma_active(ch));
+	while(sh2_dma_active(ch));
 }
 
 INLINE void sh2_dma_cpy(u32 ch,const void *src,const void *dst,u32 cnt)
-{ sh2_dma_blast(ch,src,dst,cnt>>1,DMA_SRC_INC|DMA_DST_INC|DMA_ON|DMA_SIZE(1)); }
+{ 
+	u32 ctrl = DMA_AR|DMA_PR|DMA_NMIF|DMA_DME;
+	ctrl |= DMA_SRC_INC|DMA_DST_INC|DMA_ON|DMA_SIZE(1);
+	sh2_dma_blast(ch,src,dst,cnt>>1,ctrl);
+}
 
 /* DMA example: copy $10 bytes from WRAM_LO[$000000] to WRAM_LO[$000100]
   * sh2_dma_init();
