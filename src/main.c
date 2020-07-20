@@ -4,6 +4,7 @@
 #include "vblank.h"
 #include "img.h"
 #include "cd.h"
+#include "mat4.h"
 
 #include <machine.h>
 #define _SPR2_
@@ -44,7 +45,11 @@ typedef struct suwa_mem
 	u16 width,height,clrmode;
 	u16 buffer[0x2000];
 } PACKED suwa_mem;
-static suwa_mem *suwako = (suwa_mem*)WRAM_LO;
+suwa_mem *suwako = (suwa_mem*)WRAM_LO;
+
+void draw_txt();
+void draw_rotquad();
+void draw_3dquad();
 
 // static
 SPR_2DefineWork(
@@ -95,47 +100,11 @@ int main(void)
 			XyInt usrclip[2] = {{0,0},{100,200}};
 			SPR_2UserClip(0,usrclip);
 			/* text drawin */
-			u32 fontaddr = IMG_CHAR_LUT[IMG_ARCFONT]<<3;
-			const char txtrom[] ALIGN(2) = "THIS IS A SAMPLE FONT!\nIT TOOK WAY TOO LONG FOR ME TO\nFIGURE OUT HOW TO DISPLAY\nTHIS TEXT.\n\n\nalso, i can load images\nfrom the CD now.";
-			char txtbuf[0x0100] ALIGN(2);
-			sh2_dma_cpy(0,txtrom,txtbuf,strlen(txtrom));
-			char *txt = txtbuf;
-			VDP1_CMD base_cmd = {
-				.cmdpmod = CMDPMOD_CLR(VDP1_CLRMODE_PAL256),
-				.cmdsize = VDP1_CMDSIZE(8,8)
-			};
-			u32 chr_len = (u32)strlen(txt);
-			u32 x,y;
-			x = y = 0;
-			for(u32 i=0; i<chr_len; i++)
-			{
-				char c = txt[i];
-				if(c == '\n')
-				{ x=0; y++; }
-				else {
-					VDP1_CMD cmd = base_cmd;
-					cmd.cmdxa = x*8;
-					cmd.cmdya = y*8;
-					cmd.cmdsrca = (fontaddr + (c<<6))>>3;
-					SPR_2Cmd(0,(void*)&cmd);
-					x++;
-				}
-			}
+			draw_txt();
 			/* line drawin */
-			XyInt pos[4];
-			s32 len = mulf32(32,lu_cos(suwako->time<<4));
-			u32 ang_offset = suwako->time<<4;
-			for(u32 i=0;i<4;i++) {
-				u32 ang = ang_offset + (0x4000*i);
-				pos[i].x = mulf32(64+len,lu_cos(ang));
-				pos[i].y = mulf32(64+len,lu_sin(ang));
-				pos[i].x+=(WIDTH>>1);
-				pos[i].y+=(HEIGHT>>1);
-			}
-			
-			SPR_2DistSpr(0,0,CMDPMOD_MESH*1,RGB16(31,0,0),IMG_TESTTEX0,
-				pos,NO_GOUR
-			);
+			draw_rotquad();
+			/* 3d drawin */
+			draw_3dquad();
 		}
 		SPR_2CloseCommand();
 		
@@ -143,3 +112,83 @@ int main(void)
 		SCL_DisplayFrame();
 	}
 }
+
+void draw_txt()
+{
+	u32 fontaddr = IMG_CHAR_LUT[IMG_ARCFONT]<<3;
+	const char *txt ALIGN(2) = "THIS IS A SAMPLE FONT!\nIT TOOK WAY TOO LONG FOR ME TO\nFIGURE OUT HOW TO DISPLAY\nTHIS TEXT.\n\n\nalso, i can load images\nfrom the CD now.";
+	VDP1_CMD base_cmd = {
+		.cmdpmod = CMDPMOD_CLR(VDP1_CLRMODE_PAL256),
+		.cmdsize = VDP1_CMDSIZE(8,8)
+	};
+	u32 len = (u32)strlen(txt);
+	u32 x = 0;
+	u32 y = 0;
+	for(u32 i=0; i<len; i++)
+	{
+		char c = txt[i];
+		if(c == '\n')
+		{ x=0; y++; }
+		else {
+			VDP1_CMD cmd = base_cmd;
+			cmd.cmdxa = x*8;
+			cmd.cmdya = y*8;
+			cmd.cmdsrca = (fontaddr + (c<<6))>>3;
+			SPR_2Cmd(0,(void*)&cmd);
+			x++;
+		}
+	}
+}
+
+void draw_rotquad()
+{
+	XyInt pos[4];
+	s32 len = 32; //mulf32(32,lu_cos(suwako->time<<4));
+	u32 ang_offset = suwako->time<<4;
+	for(u32 i=0;i<4;i++) {
+		u32 ang = ang_offset + (0x4000*i);
+		pos[i].x = mulf32(64+len,lu_cos(ang));
+		pos[i].y = mulf32(64+len,lu_sin(ang));
+		pos[i].x+=(WIDTH>>1);
+		pos[i].y+=(HEIGHT>>1);
+	}
+	
+	SPR_2DistSpr(0,0,CMDPMOD_MESH*1,RGB16(31,0,0),IMG_TESTTEX0,
+		pos,NO_GOUR
+	);
+}
+
+void draw_3dquad()
+{
+	vec3_f32 quad_vrt[4] = {
+		{s32tof32(-1),s32tof32(-1),0},
+		{s32tof32(1),s32tof32(-1),0},
+		{s32tof32(1),s32tof32(1),0},
+		{s32tof32(-1),s32tof32(1),0}
+	};
+	// rotate the quad
+	mat4 rotmatrix = mat4_ang(0,suwako->time<<4,0);
+	vec3_f32 quad_rot[4];
+	for(u32 v=0; v<4; v++)
+	{
+		//quad_vrt[v].x = mulf32(quad_vrt[v].x,0x30000);
+		//quad_vrt[v].y = mulf32(quad_vrt[v].y,0x30000);
+		//quad_vrt[v].z = mulf32(quad_vrt[v].z,0x30000);
+		 
+		quad_rot[v] = mat4_mulV(&rotmatrix,&quad_vrt[v]);
+		quad_rot[v].z += 0x14000;
+	}
+	// to screen space
+	XyInt quad_scrn[4];
+	for(u32 v=0; v<4; v++)
+	{
+		f32 zscale = s32tof32(0x18)/quad_rot[v].z;
+		quad_scrn[v].x = (WIDTH/2)  + (mulf32(quad_rot[v].x,zscale));
+		quad_scrn[v].y = (HEIGHT/2) + (mulf32(quad_rot[v].y,zscale));
+	}
+	
+	SPR_2DistSpr(0,0,CMDPMOD_MESH*1,RGB16(31,0,0),IMG_TESTTEX0,
+		quad_scrn,NO_GOUR
+	);
+}
+

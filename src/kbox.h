@@ -27,8 +27,8 @@ typedef signed char s8;
 typedef signed short s16;
 typedef signed int s32;
 
-typedef s32 f32;
 typedef s16 f16;
+typedef s32 f32;
 
 #define KBSIZE(n) (0x400*(n))
 #define MBSIZE(n) (KBSIZE(0x400)*n)
@@ -40,9 +40,27 @@ typedef s16 f16;
 /*---- fixed point --------------------------------------------------*/
 #define FIX_SHF (16)
 INLINE f32 mulf32(f32 a,f32 b)
-{ return (a*b)>>FIX_SHF; }
+{ 
+	f32 c = 0;
+	asm(
+		"dmuls.l %[d1],%[d2];" // `dmuls.l % , %` -- dmuls.l being double-word multplication, inputs as longword from variable register (%)
+		"sts MACH,r1;"		// `sts` - store system register MACH at explicit general-purpose register r1
+		"sts MACL,%[out];"	// `sts` - store system register MACL at variable register (%)
+		"xtrct r1,%[out];" 	// `xtrct gpr0,gpr1` - extract the lower 16-bits of gpr0 (r1) and upper 16-bits of gpr1 (%), result to gpr1 (%)
+    : [out] "=r" (c)       		 //OUT
+    : [d1] "r" (a), [d2] "r" (b)    //IN
+	:		"r1"						//CLOBBERS
+	);
+	return c;
+}
 INLINE s32 f32tos32(f32 a)
 { return a>>FIX_SHF; }
+INLINE f32 s32tof32(s32 a)
+{ return (a) * (1<<FIX_SHF); }
+
+/*---- vectors ------------------------------------------------------*/
+typedef struct vec3_f16 { f16 x,y,z; } PACKED vec3_f16;
+typedef struct vec3_f32 { f32 x,y,z; } PACKED vec3_f32;
 
 /*---- color defines ------------------------------------------------*/
 typedef u16 CLR16; // 16-bit color in format 1BBBBBGGGGGRRRRR
