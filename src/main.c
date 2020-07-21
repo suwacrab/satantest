@@ -184,20 +184,23 @@ void draw_3dquad()
 		{s32tof32(-1),s32tof32(1),s32tof32(1)}, // botom right
 		{s32tof32(-1),s32tof32(1),s32tof32(-1)}, // bottom left
 	};
-	XyInt posbuf[0x0100][4];
-	memset(posbuf,0,sizeof(XyInt)*4*0x0100);
+	// Z-buffering
+	VDP1_CMD cmdbuf[0x0200];
+	u16 zbuf[0x0200];
+	for(u32 q=0; q<4; q++)
+	{
+
+	}
 	// rotate the quad
-	mat4 rotmatrix = mat4_ang(suwako->time<<1,suwako->time<<4,0);
+	mat4 rotmatrix = mat4_ang(suwako->time<<2,suwako->time<<4,0);
 	for(u32 q=0; q<4; q++)
 	{
 		// world space
-		f32 avg_z = 0;
 		vec3_f32 quad_rot[4];
 		for(u32 v=0; v<4; v++)
 		{
 			quad_rot[v] = mat4_mulV(&rotmatrix,&quad_vrt[v+(q*4)]);
 			quad_rot[v].z += 0x20000;
-			avg_z += quad_rot[v].z;
 		}
 		// to screen space
 		XyInt quad_scrn[4];
@@ -208,9 +211,18 @@ void draw_3dquad()
 			quad_scrn[v].y = (HEIGHT/2) + (mulf32(quad_rot[v].y,zscale));
 		}
 		
-		SPR_2DistSpr(0,0,CMDPMOD_MESH*0,RGB16(31,0,0),IMG_TESTTEX0,
-			quad_scrn,NO_GOUR
-		);
+		// draw
+		VDP1_CMD sprcmd = {
+			.cmdctrl = comm_distspr,
+			.cmdpmod = CMDPMOD_CLR(VDP1_CLRMODE_RGB),
+			.cmdsize = VDP1_CMDSIZE(32,32),
+			.cmdxa = quad_scrn[0].x, .cmdya=quad_scrn[0].y,
+			.cmdxb = quad_scrn[1].x, .cmdyb=quad_scrn[1].y,
+			.cmdxc = quad_scrn[2].x, .cmdyc=quad_scrn[2].y,
+			.cmdxd = quad_scrn[3].x, .cmdyd=quad_scrn[3].y,
+			.cmdsrca = IMG_CHAR_LUT[IMG_TESTTEX0]
+		};
+		SPR_2Cmd(0,(void*)&sprcmd);	
 	}
 }
 

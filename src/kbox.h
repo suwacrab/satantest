@@ -282,16 +282,11 @@ typedef enum VDP1_CLRMODE {
 #define VDP1_CMDSIZE(w,h) ( (((w)>>3)<<8) | ((h)&0xFF) )
 
 typedef struct VDP1_CMD {
-	u16  cmdctrl;
-	u16  cmdlink;
-	u16  cmdpmod;
-	u16  cmdcolr;
-	u16  cmdsrca;
-	u16  cmdsize;
-	s16  cmdxa,cmdya;
-	s16  cmdxb,cmdyb;
-	s16  cmdxc,cmdyc;
-	s16  cmdxd,cmdyd;
+	u16  cmdctrl; u16  cmdlink;
+	u16  cmdpmod; u16  cmdcolr;
+	u16  cmdsrca; u16  cmdsize;
+	s16  cmdxa,cmdya; s16  cmdxb,cmdyb;
+	s16  cmdxc,cmdyc; s16  cmdxd,cmdyd;
 	u16  cmdgrda;
 	u16  dummy;
 } PACKED VDP1_CMD;
