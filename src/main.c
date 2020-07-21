@@ -99,12 +99,12 @@ int main(void)
 			SPR_2SysClip(0, &(XyInt){319,223});
 			XyInt usrclip[2] = {{0,0},{100,200}};
 			SPR_2UserClip(0,usrclip);
-			/* text drawin */
-			draw_txt();
 			/* line drawin */
 			draw_rotquad();
 			/* 3d drawin */
 			draw_3dquad();
+			/* text drawin */
+			draw_txt();
 		}
 		SPR_2CloseCommand();
 		
@@ -171,10 +171,6 @@ void draw_3dquad()
 	vec3_f32 quad_rot[4];
 	for(u32 v=0; v<4; v++)
 	{
-		//quad_vrt[v].x = mulf32(quad_vrt[v].x,0x30000);
-		//quad_vrt[v].y = mulf32(quad_vrt[v].y,0x30000);
-		//quad_vrt[v].z = mulf32(quad_vrt[v].z,0x30000);
-		 
 		quad_rot[v] = mat4_mulV(&rotmatrix,&quad_vrt[v]);
 		quad_rot[v].z += 0x14000;
 	}
