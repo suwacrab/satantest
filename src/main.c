@@ -19,6 +19,7 @@
 #include <sega_gfs.h>
 
 #include <sega_dma.h>
+#include <stdio.h>
 #include <string.h>
 
 /* sbl defines */
@@ -116,7 +117,8 @@ int main(void)
 void draw_txt()
 {
 	u32 fontaddr = IMG_CHAR_LUT[IMG_ARCFONT]<<3;
-	const char *txt ALIGN(2) = "THIS IS A SAMPLE FONT!\nIT TOOK WAY TOO LONG FOR ME TO\nFIGURE OUT HOW TO DISPLAY\nTHIS TEXT.\n\n\nalso, i can load images\nfrom the CD now.";
+	char txt[0x0100] ALIGN(2);
+	sprintf(txt,"ARCFONT TEST\n\nnow with rotation\n\ntime: %08X",suwako->time);
 	VDP1_CMD base_cmd = {
 		.cmdpmod = CMDPMOD_CLR(VDP1_CLRMODE_PAL256),
 		.cmdsize = VDP1_CMDSIZE(8,8)
@@ -153,38 +155,62 @@ void draw_rotquad()
 		pos[i].y+=(HEIGHT>>1);
 	}
 	
-	SPR_2DistSpr(0,0,CMDPMOD_MESH*1,RGB16(31,0,0),IMG_TESTTEX0,
+	SPR_2DistSpr(0,0,CMDPMOD_MESH*0,RGB16(31,0,0),IMG_TESTTEX0,
 		pos,NO_GOUR
 	);
 }
 
 void draw_3dquad()
 {
-	vec3_f32 quad_vrt[4] = {
-		{s32tof32(-1),s32tof32(-1),0},
-		{s32tof32(1),s32tof32(-1),0},
-		{s32tof32(1),s32tof32(1),0},
-		{s32tof32(-1),s32tof32(1),0}
+	vec3_f32 quad_vrt[4*4] = {
+		// front
+		{s32tof32(-1),s32tof32(-1),s32tof32(1)},
+		{s32tof32(1),s32tof32(-1),s32tof32(1)},
+		{s32tof32(1),s32tof32(1),s32tof32(1)},
+		{s32tof32(-1),s32tof32(1),s32tof32(1)},
+		// right (NO GOOD)
+		{s32tof32(1),s32tof32(-1),s32tof32(1)}, // top left
+		{s32tof32(1),s32tof32(-1),s32tof32(-1)}, // top right
+		{s32tof32(1),s32tof32(1),s32tof32(-1)}, // botom right
+		{s32tof32(1),s32tof32(1),s32tof32(1)}, // bottom left
+		// back
+		{s32tof32(1),s32tof32(-1),s32tof32(-1)}, // top left
+		{s32tof32(-1),s32tof32(-1),s32tof32(-1)}, // top right
+		{s32tof32(-1),s32tof32(1),s32tof32(-1)}, // botom right
+		{s32tof32(1),s32tof32(1),s32tof32(-1)}, // bottom left
+		// left ( NO GOOD )
+		{s32tof32(-1),s32tof32(-1),s32tof32(-1)}, // top left
+		{s32tof32(-1),s32tof32(-1),s32tof32(1)}, // top right
+		{s32tof32(-1),s32tof32(1),s32tof32(1)}, // botom right
+		{s32tof32(-1),s32tof32(1),s32tof32(-1)}, // bottom left
 	};
+	XyInt posbuf[0x0100][4];
+	memset(posbuf,0,sizeof(XyInt)*4*0x0100);
 	// rotate the quad
-	mat4 rotmatrix = mat4_ang(0,suwako->time<<4,0);
-	vec3_f32 quad_rot[4];
-	for(u32 v=0; v<4; v++)
+	mat4 rotmatrix = mat4_ang(suwako->time<<1,suwako->time<<4,0);
+	for(u32 q=0; q<4; q++)
 	{
-		quad_rot[v] = mat4_mulV(&rotmatrix,&quad_vrt[v]);
-		quad_rot[v].z += 0x14000;
+		// world space
+		f32 avg_z = 0;
+		vec3_f32 quad_rot[4];
+		for(u32 v=0; v<4; v++)
+		{
+			quad_rot[v] = mat4_mulV(&rotmatrix,&quad_vrt[v+(q*4)]);
+			quad_rot[v].z += 0x20000;
+			avg_z += quad_rot[v].z;
+		}
+		// to screen space
+		XyInt quad_scrn[4];
+		for(u32 v=0; v<4; v++)
+		{
+			f32 zscale = s32tof32(0x20)/quad_rot[v].z;
+			quad_scrn[v].x = (WIDTH/2)  + (mulf32(quad_rot[v].x,zscale));
+			quad_scrn[v].y = (HEIGHT/2) + (mulf32(quad_rot[v].y,zscale));
+		}
+		
+		SPR_2DistSpr(0,0,CMDPMOD_MESH*0,RGB16(31,0,0),IMG_TESTTEX0,
+			quad_scrn,NO_GOUR
+		);
 	}
-	// to screen space
-	XyInt quad_scrn[4];
-	for(u32 v=0; v<4; v++)
-	{
-		f32 zscale = s32tof32(0x18)/quad_rot[v].z;
-		quad_scrn[v].x = (WIDTH/2)  + (mulf32(quad_rot[v].x,zscale));
-		quad_scrn[v].y = (HEIGHT/2) + (mulf32(quad_rot[v].y,zscale));
-	}
-	
-	SPR_2DistSpr(0,0,CMDPMOD_MESH*1,RGB16(31,0,0),IMG_TESTTEX0,
-		quad_scrn,NO_GOUR
-	);
 }
 
